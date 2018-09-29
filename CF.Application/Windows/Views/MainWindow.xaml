@@ -4,10 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:CF.Application.Windows.ViewModels"
+        xmlns:views="clr-namespace:CF.Application.Controls.Views"
+        xmlns:behaviors="clr-namespace:CF.Application.Windows.Behaviors"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel}"
         Title="Chaos game by Sergey Vaulin [devowl.net]" Height="350" Width="525">
     <Grid>
-        
+        <views:ChaosField>
+            <i:Interaction.Behaviors>
+                <behaviors:SetPointBehavior SetAnchorPoint="{Binding SetAnchorPoint, Mode=OneWayToSource}"/>
+            </i:Interaction.Behaviors>
+        </views:ChaosField>
     </Grid>
 </Window>
