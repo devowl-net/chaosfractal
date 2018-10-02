@@ -11,9 +11,9 @@
         d:DataContext="{d:DesignInstance viewModels:MainWindowViewModel}"
         Title="Chaos game by Sergey Vaulin [devowl.net]" Height="350" Width="525">
     <Grid>
-        <views:ChaosField>
+        <views:ChaosField ChaosManager="{Binding ChaosManager, Mode=OneWayToSource}">
             <i:Interaction.Behaviors>
-                <behaviors:SetPointBehavior SetAnchorPoint="{Binding SetAnchorPoint, Mode=OneWayToSource}"/>
+                <behaviors:SetPointBehavior />
             </i:Interaction.Behaviors>
         </views:ChaosField>
     </Grid>

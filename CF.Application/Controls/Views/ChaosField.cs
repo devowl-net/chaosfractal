@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+
+using CF.Application.Common;
+using CF.Application.Controls.Models;
 
 namespace CF.Application.Controls.Views
 {
@@ -13,6 +17,17 @@ namespace CF.Application.Controls.Views
     /// </summary>
     public class ChaosField : StackPanel
     {
+        private const int BackgroundGridZIndex = 0;
+
+        private readonly IDictionary<DotType, int> _dotTypeZIndexes = new Dictionary<DotType, int>()
+        {
+            { DotType.Track, 1 },
+            { DotType.Anchor, 2 },
+            { DotType.Main, 3 },
+        };
+
+        private PointData _mainPoint;
+
         /// <summary>
         /// Dependency property for <see cref="LineBrush"/> property.
         /// </summary>
@@ -27,28 +42,46 @@ namespace CF.Application.Controls.Views
         /// Dependency property for <see cref="DotRadius"/> property.
         /// </summary>
         public static readonly DependencyProperty DotRadiusProperty;
+        
+        private readonly ICollection<PointData> _anchorPoints = new List<PointData>();
 
-        /// <summary>
-        /// Dependency property for <see cref="SetAnchorPoint"/>.
-        /// </summary>
-        public static readonly DependencyProperty SetAnchorPointProperty;
-
-        private readonly IDictionary<Point, PointData> _anchorPoints = new Dictionary<Point, PointData>();
+        private readonly ICollection<PointData> _trackPoints = new List<PointData>();
 
         private readonly ICollection<Line> _lines = new List<Line>();
 
+        /// <summary>
+        /// Dependency property for <see cref="ChaosManager"/> property.
+        /// </summary>
+        public static readonly DependencyProperty ChaosManagerProperty;
+
+        /// <summary>
+        /// Chaos manager instance.
+        /// </summary>
+        public ChaosManager ChaosManager
+        {
+            get
+            {
+                return (ChaosManager)GetValue(ChaosManagerProperty);
+            }
+
+            set
+            {
+                throw new InvalidOperationException("Please use OneWayToSource binding mode");
+            }
+        }
+        
         static ChaosField()
         {
-            SetAnchorPointProperty = DependencyProperty.Register(
-                nameof(SetAnchorPoint),
-                typeof(Action<Point>),
+            ChaosManagerProperty = DependencyProperty.Register(
+                nameof(ChaosManager),
+                typeof(ChaosManager),
                 typeof(ChaosField));
 
             DotRadiusProperty = DependencyProperty.Register(
                 nameof(DotRadius),
                 typeof(double),
                 typeof(ChaosField),
-                new PropertyMetadata(5));
+                new PropertyMetadata(5.0));
 
             LineBrushProperty = DependencyProperty.Register(
                 nameof(LineBrush),
@@ -75,18 +108,8 @@ namespace CF.Application.Controls.Views
             Background = Brushes.Black;
             Loaded += ControlLoaded;
             SizeChanged += (sender, args) => SquareGrid();
-            SetValue(SetAnchorPointProperty, new Action<Point>(InternalSetAnchorPoint));
         }
-
-        private enum DotType
-        {
-            Anchor,
-
-            Main,
-
-            Track
-        }
-
+        
         /// <summary>
         /// Current anchor point roster.
         /// </summary>
@@ -94,7 +117,7 @@ namespace CF.Application.Controls.Views
         {
             get
             {
-                return _anchorPoints.Keys;
+                return _anchorPoints.Select(data => data.Point).ToArray();
             }
         }
 
@@ -107,6 +130,7 @@ namespace CF.Application.Controls.Views
             {
                 return (double)GetValue(DotRadiusProperty);
             }
+
             set
             {
                 SetValue(DotRadiusProperty, value);
@@ -144,23 +168,7 @@ namespace CF.Application.Controls.Views
                 SetValue(CellSizeProperty, value);
             }
         }
-
-        /// <summary>
-        /// Set archer point action.
-        /// </summary>
-        public Action<Point> SetAnchorPoint
-        {
-            get
-            {
-                return (Action<Point>)GetValue(SetAnchorPointProperty);
-            }
-
-            set
-            {
-                throw new InvalidOperationException("You can't set anchor function");
-            }
-        }
-
+        
         private Canvas CanvasRef { get; }
 
         /// <summary>
@@ -212,7 +220,7 @@ namespace CF.Application.Controls.Views
                     }
                 }
 
-                buffer += charName1;
+                buffer = charName1.ToString();
             }
 
             throw new InvalidOperationException("Too many dots");
@@ -226,21 +234,81 @@ namespace CF.Application.Controls.Views
         /// <summary>
         /// Set anchor point.
         /// </summary>
-        /// <param name="point"></param>
-        private void InternalSetAnchorPoint(Point point)
+        /// <param name="point">Point coordinates.</param>
+        /// <param name="dotType">Dot type.</param>
+        public void DrawPoint(Point point, DotType dotType)
         {
-            if (_anchorPoints.ContainsKey(point))
+            switch (dotType)
+            {
+                case DotType.Anchor:
+                    DrawAnchor(point);
+                    break;
+                case DotType.Main:
+                    DrawMain(point);
+                    break;
+                case DotType.Track:
+                    DrawTrack(point);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dotType), dotType, null);
+            }
+        }
+
+        private void DrawTrack(Point point)
+        {
+            if (_trackPoints.Any(t => t.Point == point))
             {
                 return;
             }
 
-            var pointName = GetFreePointName(_anchorPoints.Values.Select(data => data.VisualName));
-            var pointData = new PointData() { VisualName = pointName };
-            _anchorPoints.Add(point, pointData);
-            DrawPoint(pointData, DotType.Anchor);
+            var pointData = new PointData(CanvasRef)
+            {
+                Point = point
+            };
+
+            _trackPoints.Add(pointData);
+            pointData.PointVisual  = DrawPointObject(point, DotType.Track);
         }
 
-        private void DrawPoint(PointData pointData, DotType dotType)
+        private void DrawMain(Point point)
+        {
+            _mainPoint?.Clear();
+            _mainPoint = new PointData(CanvasRef) { PointVisual = DrawPointObject(point, DotType.Main) };
+        }
+
+        private void DrawAnchor(Point point)
+        {
+            if (_anchorPoints.Any(a => a.Point == point))
+            {
+                return;
+            }
+
+            var name = GetFreePointName(_anchorPoints.Select(data => data.Name));
+            var pointData = new PointData(CanvasRef)
+            {
+                Name = name,
+                Point = point
+            };
+
+            _anchorPoints.Add(pointData);
+            pointData.PointVisual = DrawPointObject(point, DotType.Anchor);
+            pointData.NameVisual = DrawTextObject(point, name, DotType.Anchor);
+        }
+
+        private UIElement DrawTextObject(Point point, string text, DotType dotType)
+        {
+            var nameBlock = new TextBlock();
+            CanvasRef.Children.Add(nameBlock);
+            nameBlock.Text = text;
+            nameBlock.Foreground = Brushes.White;
+            Canvas.SetLeft(nameBlock, point.X + DotRadius);
+            Canvas.SetTop(nameBlock, point.Y);
+            SetZIndex(nameBlock, _dotTypeZIndexes[dotType]);
+
+            return nameBlock;
+        }
+
+        private UIElement DrawPointObject(Point point, DotType dotType)
         {
             Brush dotBrush;
             switch (dotType)
@@ -258,20 +326,20 @@ namespace CF.Application.Controls.Views
                     throw new ArgumentOutOfRangeException(nameof(dotType), dotType, null);
             }
 
-            var dot = new Ellipse() { Width = DotRadius, Height = DotRadius, Fill = dotBrush, Tag = pointData };
-
+            var dot = new Ellipse() { Width = DotRadius, Height = DotRadius, Fill = dotBrush };
+            
             CanvasRef.Children.Add(dot);
-            Canvas.SetLeft(dot, pointData.Coordinate.X);
-            Canvas.SetTop(dot, pointData.Coordinate.Y);
+            Canvas.SetLeft(dot, point.X);
+            Canvas.SetTop(dot, point.Y);
+            SetZIndex(dot, _dotTypeZIndexes[dotType]);
 
-            if (dotType == DotType.Anchor)
-            {
-            }
+            return dot;
         }
 
         private void ControlLoaded(object sender, RoutedEventArgs args)
         {
             Loaded -= ControlLoaded;
+            SetValue(ChaosManagerProperty, new ChaosManager(this));
             SquareGrid();
         }
 
@@ -295,6 +363,7 @@ namespace CF.Application.Controls.Views
                 var horizontalLine = CreateLine(0, i * CellSize, width * CellSize, i * CellSize);
                 horizontalLine.Stroke = i % 10 == 0 ? LineBrush : tenthLine;
                 CanvasRef.Children.Add(horizontalLine);
+                SetZIndex(horizontalLine, BackgroundGridZIndex);
                 _lines.Add(horizontalLine);
             }
 
@@ -304,26 +373,59 @@ namespace CF.Application.Controls.Views
                 var verticalLine = CreateLine(j * CellSize, 0, j * CellSize, height * CellSize);
                 verticalLine.Stroke = j % 10 == 0 ? LineBrush : tenthLine;
                 CanvasRef.Children.Add(verticalLine);
+                SetZIndex(verticalLine, BackgroundGridZIndex);
                 _lines.Add(verticalLine);
             }
         }
 
         private class PointData
         {
+            private readonly Panel _panel;
+
+            /// <summary>
+            /// Constructor for <see cref="PointData"/>.
+            /// </summary>
+            public PointData(Panel panel)
+            {
+                if (panel == null)
+                {
+                    throw new ArgumentNullException(nameof(panel));
+                }
+
+                _panel = panel;
+            }
+
             /// <summary>
             /// Point coordinate.
             /// </summary>
-            public Point Coordinate { get; set; }
+            public Point Point { get; set; }
 
             /// <summary>
             /// Visual presentation on the screen.
             /// </summary>
-            public Ellipse Visual { get; set; }
+            public UIElement PointVisual { get; set; }
 
             /// <summary>
-            /// Visual name.
+            /// Point name.
             /// </summary>
-            public string VisualName { get; set; }
+            public string Name { get; set; }
+
+            /// <summary>
+            /// PointVisual text on the screen.
+            /// </summary>
+            public UIElement NameVisual { get; set; }
+
+            /// <summary>
+            /// Clear point data.
+            /// </summary>
+            public void Clear()
+            {
+                new List<UIElement>
+                {
+                    PointVisual,
+                    NameVisual
+                }.ForEach(_panel.Children.Remove);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 
+using CF.Application.Common;
+using CF.Application.Controls.Models;
 using CF.Application.Prism;
 using CF.Application.Windows.Views;
 
@@ -11,17 +12,38 @@ namespace CF.Application.Windows.ViewModels
     /// </summary>
     public class MainWindowViewModel : NotificationObject
     {
+        private ChaosManager _chaosManager;
+
         /// <summary>
         /// Constructor for <see cref="MainWindowViewModel"/>.
         /// </summary>
         public MainWindowViewModel()
         {
-            
         }
 
         /// <summary>
-        /// Set anchor point.
+        /// Chaos field manager instance.
         /// </summary>
-        public Action<Point> SetAnchorPoint { get; set; }
+        public ChaosManager ChaosManager
+        {
+            get
+            {
+                return _chaosManager;
+            }
+
+            set
+            {
+                if (value != null)
+                {
+                    _chaosManager = value;
+                    _chaosManager.SetHandler(PointTypeManager);
+                }
+            }
+        }
+
+        private DotType PointTypeManager(Point point)
+        {
+            return DotType.Anchor;
+        }
     }
 }
