@@ -71,12 +71,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Common\DotType.cs" />
+    <Compile Include="Controls\Data\GameLogic.cs" />
+    <Compile Include="Controls\Data\PointArgs.cs" />
     <Compile Include="Controls\Models\ChaosManager.cs" />
     <Compile Include="Controls\Views\ChaosField.cs" />
     <Compile Include="Prism\DelegateCommand.cs" />
     <Compile Include="Prism\NotificationObject.cs" />
     <Compile Include="Prism\PropertySupport.cs" />
     <Compile Include="Windows\Behaviors\SetPointBehavior.cs" />
+    <Compile Include="Windows\Conveters\InvertBoolConverter.cs" />
     <Compile Include="Windows\ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Windows\Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -109,6 +112,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Windows\Images\close.png" />
+    <Resource Include="Windows\Images\tick.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

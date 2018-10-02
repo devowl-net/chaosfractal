@@ -9,12 +9,16 @@
         /// Anchor point.
         /// </summary>
         Anchor,
+        
+        /// <summary>
+        /// Current track point.
+        /// </summary>
+        CurrentTrack,
 
         /// <summary>
-        /// Main point.
+        /// Random point.
         /// </summary>
-        /// <remarks>Current iteration track point.</remarks>
-        Main,
+        Random,
 
         /// <summary>
         /// Track point.

@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 
 using CF.Application.Common;
+using CF.Application.Controls.Data;
 using CF.Application.Controls.Models;
 
 namespace CF.Application.Controls.Views
@@ -23,10 +24,13 @@ namespace CF.Application.Controls.Views
         {
             { DotType.Track, 1 },
             { DotType.Anchor, 2 },
-            { DotType.Main, 3 },
+            { DotType.Random, 3 },
+            { DotType.CurrentTrack, 4 },
         };
 
-        private PointData _mainPoint;
+        private PointData _randomPoint;
+
+        private PointData _currentTrackPoint;
 
         /// <summary>
         /// Dependency property for <see cref="LineBrush"/> property.
@@ -108,8 +112,19 @@ namespace CF.Application.Controls.Views
             Background = Brushes.Black;
             Loaded += ControlLoaded;
             SizeChanged += (sender, args) => SquareGrid();
+            GameLogic = new GameLogic(this);
         }
-        
+
+        /// <summary>
+        /// User random point.
+        /// </summary>
+        public Point? RandomPoint => _randomPoint?.Point;
+
+        /// <summary>
+        /// User random point.
+        /// </summary>
+        public Point? CurrentTrackPoint => _currentTrackPoint?.Point;
+
         /// <summary>
         /// Current anchor point roster.
         /// </summary>
@@ -232,6 +247,11 @@ namespace CF.Application.Controls.Views
         }
 
         /// <summary>
+        /// When point added event.
+        /// </summary>
+        public event EventHandler<PointArgs> OnPointAdded;
+
+        /// <summary>
         /// Set anchor point.
         /// </summary>
         /// <param name="point">Point coordinates.</param>
@@ -243,8 +263,11 @@ namespace CF.Application.Controls.Views
                 case DotType.Anchor:
                     DrawAnchor(point);
                     break;
-                case DotType.Main:
-                    DrawMain(point);
+                case DotType.CurrentTrack:
+                    DrawCurrentTrack(point);
+                    break;
+                case DotType.Random:
+                    DrawRandom(point);
                     break;
                 case DotType.Track:
                     DrawTrack(point);
@@ -253,6 +276,14 @@ namespace CF.Application.Controls.Views
                     throw new ArgumentOutOfRangeException(nameof(dotType), dotType, null);
             }
         }
+
+        private void DrawCurrentTrack(Point point)
+        {
+            _currentTrackPoint?.Clear();
+            _currentTrackPoint = new PointData(CanvasRef) { Point = point, PointVisual = DrawPointObject(point, DotType.CurrentTrack) };
+        }
+
+        public GameLogic GameLogic { get; }
 
         private void DrawTrack(Point point)
         {
@@ -268,12 +299,14 @@ namespace CF.Application.Controls.Views
 
             _trackPoints.Add(pointData);
             pointData.PointVisual  = DrawPointObject(point, DotType.Track);
+            OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Track));
         }
 
-        private void DrawMain(Point point)
+        private void DrawRandom(Point point)
         {
-            _mainPoint?.Clear();
-            _mainPoint = new PointData(CanvasRef) { PointVisual = DrawPointObject(point, DotType.Main) };
+            _randomPoint?.Clear();
+            _randomPoint = new PointData(CanvasRef) { Point = point, PointVisual = DrawPointObject(point, DotType.Random) };
+            OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Random));
         }
 
         private void DrawAnchor(Point point)
@@ -293,6 +326,7 @@ namespace CF.Application.Controls.Views
             _anchorPoints.Add(pointData);
             pointData.PointVisual = DrawPointObject(point, DotType.Anchor);
             pointData.NameVisual = DrawTextObject(point, name, DotType.Anchor);
+            OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Anchor));
         }
 
         private UIElement DrawTextObject(Point point, string text, DotType dotType)
@@ -313,10 +347,13 @@ namespace CF.Application.Controls.Views
             Brush dotBrush;
             switch (dotType)
             {
+                case DotType.CurrentTrack:
+                    dotBrush = Brushes.Yellow;
+                    break;
                 case DotType.Anchor:
                     dotBrush = Brushes.DeepSkyBlue;
                     break;
-                case DotType.Main:
+                case DotType.Random:
                     dotBrush = Brushes.LawnGreen;
                     break;
                 case DotType.Track:
