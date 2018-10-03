@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 using CF.Application.Common;
 using CF.Application.Controls.Data;
 using CF.Application.Controls.Models;
 using CF.Application.Prism;
+using CF.Application.Windows.Models;
 using CF.Application.Windows.Views;
 
 namespace CF.Application.Windows.ViewModels
@@ -30,6 +32,17 @@ namespace CF.Application.Windows.ViewModels
                 OnStep1Click,
                 o => ChaosManager != null && ChaosManager.PressedAnchors.Count() >= 3);
             Step2Command = new DelegateCommand(OnStep2Click, o => ChaosManager?.Random != null);
+            ResetCommand = new DelegateCommand(ResetGame);
+
+            // http://unicodefractions.com/
+            Distances = new[]
+            {
+                new Distance(189, 2),
+                new Distance(8531, 3),
+                new Distance(188, 4),
+                new Distance(8533, 5),
+                new Distance(8537, 6),
+            };
         }
 
         /// <summary>
@@ -67,6 +80,21 @@ namespace CF.Application.Windows.ViewModels
         }
 
         /// <summary>
+        /// Distance factor.
+        /// </summary>
+        public IEnumerable<Distance> Distances { get; }
+
+        /// <summary>
+        /// Selected distance factor.
+        /// </summary>
+        public Distance SelectedFactor { get; set; }
+
+        /// <summary>
+        /// Reset game command.
+        /// </summary>
+        public DelegateCommand ResetCommand { get; }
+
+        /// <summary>
         /// Step2 okay button.
         /// </summary>
         public DelegateCommand Step2Command { get; }
@@ -98,9 +126,17 @@ namespace CF.Application.Windows.ViewModels
             }
         }
 
+        private void ResetGame(object obj)
+        {
+            Step1Passed = null;
+            Step2Passed = false;
+            ChaosManager.Reset();
+        }
+
         private void OnStep2Click(object obj)
         {
-            ChaosManager.Start();
+            Step2Passed = true;
+            ChaosManager.Start(SelectedFactor.Value);
         }
 
         private void OnStep1Click(object obj)

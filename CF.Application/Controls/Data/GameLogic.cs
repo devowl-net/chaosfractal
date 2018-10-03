@@ -21,6 +21,8 @@ namespace CF.Application.Controls.Data
 
         private Point[] _anchorPoints;
 
+        private int _factor; 
+
         /// <summary>
         /// Constructor for <see cref="GameLogic"/>.
         /// </summary>
@@ -34,7 +36,7 @@ namespace CF.Application.Controls.Data
         /// <summary>
         /// Start game.
         /// </summary>
-        public void StartGame()
+        public void StartGame(int factor)
         {
             StopGame();
             if (_chaosField.RandomPoint == null)
@@ -42,6 +44,7 @@ namespace CF.Application.Controls.Data
                 return;
             }
 
+            _factor = factor;
             var userRandomPoint = _chaosField.RandomPoint.Value;
             _chaosField.DrawPoint(userRandomPoint, DotType.CurrentTrack);
             _anchorPoints = _chaosField.AnchorPoints.ToArray();
@@ -79,7 +82,7 @@ namespace CF.Application.Controls.Data
 
         private double GetMiddle(double d1, double d2)
         {
-            return (d2 + d1) / 2;
+            return (d2 + d1 * (_factor - 1)) / _factor;
         }
     }
 }

@@ -80,6 +80,7 @@
     <Compile Include="Prism\PropertySupport.cs" />
     <Compile Include="Windows\Behaviors\SetPointBehavior.cs" />
     <Compile Include="Windows\Conveters\InvertBoolConverter.cs" />
+    <Compile Include="Windows\Models\Distance.cs" />
     <Compile Include="Windows\ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Windows\Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

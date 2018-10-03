@@ -70,9 +70,19 @@ namespace CF.Application.Controls.Models
         /// <summary>
         /// Start game.
         /// </summary>
-        public void Start()
+        /// <param name="factor">Distance factor.</param>
+        public void Start(int factor)
         {
-            _chaosField.GameLogic.StartGame();
+            _chaosField.GameLogic.StartGame(factor);
+        }
+
+        /// <summary>
+        /// Reset game.
+        /// </summary>
+        public void Reset()
+        {
+            _chaosField.GameLogic.StopGame();
+            _chaosField.Clear();
         }
     }
 }

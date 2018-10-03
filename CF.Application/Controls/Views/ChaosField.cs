@@ -464,5 +464,27 @@ namespace CF.Application.Controls.Views
                 }.ForEach(_panel.Children.Remove);
             }
         }
+
+        /// <summary>
+        /// Clear game field.
+        /// </summary>
+        public void Clear()
+        {
+            foreach (var point in _anchorPoints)
+            {
+                point.Clear();
+            }
+
+            _currentTrackPoint.Clear();
+            _randomPoint.Clear();
+            foreach (var point in _trackPoints)
+            {
+                point.Clear();
+            }
+
+            _trackPoints.Clear();
+            _anchorPoints.Clear();
+            _currentTrackPoint = _randomPoint = null;
+        }
     }
 }
