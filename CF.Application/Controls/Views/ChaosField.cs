@@ -85,7 +85,7 @@ namespace CF.Application.Controls.Views
                 nameof(DotRadius),
                 typeof(double),
                 typeof(ChaosField),
-                new PropertyMetadata(5.0));
+                new PropertyMetadata(2.5));
 
             LineBrushProperty = DependencyProperty.Register(
                 nameof(LineBrush),
@@ -99,7 +99,7 @@ namespace CF.Application.Controls.Views
                 nameof(CellSize),
                 typeof(int),
                 typeof(ChaosField),
-                new PropertyMetadata(10, (source, args) => ((ChaosField)source).SquareGrid()));
+                new PropertyMetadata(5, (source, args) => ((ChaosField)source).SquareGrid()));
         }
 
         /// <summary>
