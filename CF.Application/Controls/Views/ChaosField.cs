@@ -23,9 +23,9 @@ namespace CF.Application.Controls.Views
         private readonly IDictionary<DotType, int> _dotTypeZIndexes = new Dictionary<DotType, int>()
         {
             { DotType.Track, 1 },
-            { DotType.Anchor, 2 },
+            { DotType.CurrentTrack, 2 },
             { DotType.Random, 3 },
-            { DotType.CurrentTrack, 4 },
+            { DotType.Anchor, 4 },
         };
 
         private PointData _randomPoint;
@@ -128,11 +128,11 @@ namespace CF.Application.Controls.Views
         /// <summary>
         /// Current anchor point roster.
         /// </summary>
-        public IEnumerable<Point> AnchorPoints
+        public IDictionary<Point, Brush> AnchorPoints
         {
             get
             {
-                return _anchorPoints.Select(data => data.Point).ToArray();
+                return _anchorPoints.ToDictionary(data => data.Point, data => data.Color);
             }
         }
 
@@ -256,7 +256,8 @@ namespace CF.Application.Controls.Views
         /// </summary>
         /// <param name="point">Point coordinates.</param>
         /// <param name="dotType">Dot type.</param>
-        public void DrawPoint(Point point, DotType dotType)
+        /// <param name="color">Цвет рисуемой точки.</param>
+        public void DrawPoint(Point point, DotType dotType, Brush color = null)
         {
             switch (dotType)
             {
@@ -270,7 +271,7 @@ namespace CF.Application.Controls.Views
                     DrawRandom(point);
                     break;
                 case DotType.Track:
-                    DrawTrack(point);
+                    DrawTrack(point, color);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(dotType), dotType, null);
@@ -280,12 +281,12 @@ namespace CF.Application.Controls.Views
         private void DrawCurrentTrack(Point point)
         {
             _currentTrackPoint?.Clear();
-            _currentTrackPoint = new PointData(CanvasRef) { Point = point, PointVisual = DrawPointObject(point, DotType.CurrentTrack) };
+            _currentTrackPoint = new PointData(CanvasRef) { Point = point, PointVisual = DrawPointObject(point, Brushes.Yellow, DotType.CurrentTrack) };
         }
 
         public GameLogic GameLogic { get; }
 
-        private void DrawTrack(Point point)
+        private void DrawTrack(Point point, Brush color)
         {
             if (_trackPoints.Any(t => t.Point == point))
             {
@@ -294,18 +295,24 @@ namespace CF.Application.Controls.Views
 
             var pointData = new PointData(CanvasRef)
             {
-                Point = point
+                Point = point,
+                Color = color
             };
 
             _trackPoints.Add(pointData);
-            pointData.PointVisual  = DrawPointObject(point, DotType.Track);
+            pointData.PointVisual  = DrawPointObject(point, color, DotType.Track);
             OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Track));
         }
 
         private void DrawRandom(Point point)
         {
             _randomPoint?.Clear();
-            _randomPoint = new PointData(CanvasRef) { Point = point, PointVisual = DrawPointObject(point, DotType.Random) };
+            _randomPoint = new PointData(CanvasRef)
+            {
+                Point = point,
+                PointVisual = DrawPointObject(point, Brushes.LawnGreen, DotType.Random)
+            };
+
             OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Random));
         }
 
@@ -317,14 +324,16 @@ namespace CF.Application.Controls.Views
             }
 
             var name = GetFreePointName(_anchorPoints.Select(data => data.Name));
+            var color = SolidBrushProvider.GetNextColor();
             var pointData = new PointData(CanvasRef)
             {
                 Name = name,
-                Point = point
+                Point = point,
+                Color = color
             };
 
             _anchorPoints.Add(pointData);
-            pointData.PointVisual = DrawPointObject(point, DotType.Anchor);
+            pointData.PointVisual = DrawPointObject(point, color, DotType.Anchor);
             pointData.NameVisual = DrawTextObject(point, name, DotType.Anchor);
             OnPointAdded?.Invoke(this, new PointArgs(point, DotType.Anchor));
         }
@@ -342,28 +351,9 @@ namespace CF.Application.Controls.Views
             return nameBlock;
         }
 
-        private UIElement DrawPointObject(Point point, DotType dotType)
+        private UIElement DrawPointObject(Point point, Brush color, DotType dotType)
         {
-            Brush dotBrush;
-            switch (dotType)
-            {
-                case DotType.CurrentTrack:
-                    dotBrush = Brushes.Yellow;
-                    break;
-                case DotType.Anchor:
-                    dotBrush = Brushes.DeepSkyBlue;
-                    break;
-                case DotType.Random:
-                    dotBrush = Brushes.LawnGreen;
-                    break;
-                case DotType.Track:
-                    dotBrush = Brushes.Wheat;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dotType), dotType, null);
-            }
-
-            var dot = new Ellipse() { Width = DotRadius, Height = DotRadius, Fill = dotBrush };
+            var dot = new Ellipse() { Width = DotRadius, Height = DotRadius, Fill = color };
             
             CanvasRef.Children.Add(dot);
             Canvas.SetLeft(dot, point.X);
@@ -436,6 +426,11 @@ namespace CF.Application.Controls.Views
             /// Point coordinate.
             /// </summary>
             public Point Point { get; set; }
+
+            /// <summary>
+            /// Point color.
+            /// </summary>
+            public Brush Color { get; set; }
 
             /// <summary>
             /// Visual presentation on the screen.

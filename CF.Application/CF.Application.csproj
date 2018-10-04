@@ -73,6 +73,7 @@
     <Compile Include="Common\DotType.cs" />
     <Compile Include="Controls\Data\GameLogic.cs" />
     <Compile Include="Controls\Data\PointArgs.cs" />
+    <Compile Include="Controls\Data\SolidBrushProvider.cs" />
     <Compile Include="Controls\Models\ChaosManager.cs" />
     <Compile Include="Controls\Views\ChaosField.cs" />
     <Compile Include="Prism\DelegateCommand.cs" />

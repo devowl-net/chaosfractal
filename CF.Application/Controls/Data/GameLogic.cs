@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 using CF.Application.Common;
@@ -19,7 +21,7 @@ namespace CF.Application.Controls.Data
 
         private Random _random;
 
-        private Point[] _anchorPoints;
+        private IDictionary<Point, Brush> _anchorPoints;
 
         private int _factor; 
 
@@ -47,7 +49,7 @@ namespace CF.Application.Controls.Data
             _factor = factor;
             var userRandomPoint = _chaosField.RandomPoint.Value;
             _chaosField.DrawPoint(userRandomPoint, DotType.CurrentTrack);
-            _anchorPoints = _chaosField.AnchorPoints.ToArray();
+            _anchorPoints = _chaosField.AnchorPoints.ToDictionary(i => i.Key, i => i.Value);
             _random = new Random();
             _dispatcherTimer.Start();
         }
@@ -67,16 +69,18 @@ namespace CF.Application.Controls.Data
                 throw new InvalidOperationException("Current track point can't be null");
             }
 
-            var anchors = _anchorPoints.Length;
+            var anchors = _anchorPoints.Count;
             var nextIndex = _random.Next(anchors);
-            var nextAnchor = _anchorPoints[nextIndex];
+            var nextAnchorPair = _anchorPoints.ElementAt(nextIndex);
+            var nextAnchor = nextAnchorPair.Key;
+            var nextAnchorColor = nextAnchorPair.Value;
             var currentTrack = _chaosField.CurrentTrackPoint.Value;
             
             var middlePoint = new Point(
                 GetMiddle(nextAnchor.X, currentTrack.X),
                 GetMiddle(nextAnchor.Y, currentTrack.Y));
 
-            _chaosField.DrawPoint(currentTrack, DotType.Track);
+            _chaosField.DrawPoint(currentTrack, DotType.Track, nextAnchorColor);
             _chaosField.DrawPoint(middlePoint, DotType.CurrentTrack);
         }
 

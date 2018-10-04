@@ -48,7 +48,7 @@ namespace CF.Application.Controls.Models
         /// <summary>
         /// Anchor points.
         /// </summary>
-        public IEnumerable<Point> PressedAnchors => _chaosField.AnchorPoints;
+        public IEnumerable<Point> PressedAnchors => _chaosField.AnchorPoints.Keys;
 
         /// <summary>
         /// Random point coordinate.
